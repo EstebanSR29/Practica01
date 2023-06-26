@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="css/estilo1.css" rel="stylesheet" type="text/css"/>
+    <header th:replace="~{estado/fragmentos :: header}"/>
+    <title>POBLACIONES MUNDIALES</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="fuente">
+        <h1>POBLACIONES MUNDIALES</h1>
+        <h2>Agregar Estado</h2>
+        <form id="estadoForm">
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" name="nombre" required>
+            <br><br>
+            <label for="capital">Capital:</label>
+            <input type="text" id="capital" name="capital" required>
+            <br><br>
+            <label for="poblacion">Población:</label>
+            <input type="number" id="poblacion" name="poblacion" required>
+            <br><br>
+            <label for="tieneCostas">¿Tiene Costas?</label>
+            <input type="checkbox" id="tieneCostas" name="tieneCostas">
+            <br><br>
+            <button type="submit">Agregar</button>
+        </form>
+
+        <h2>Estados Registrados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Capital</th>
+                    <th>Población</th>
+                    <th>Tiene Costas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="estadoTableBody">
+                <!-- Se muestran los datos de la tabla -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        //Agregar un nuevo estado
+        document.getElementById("estadoForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            var nombre = document.getElementById("nombre").value;
+            var capital = document.getElementById("capital").value;
+            var poblacion = document.getElementById("poblacion").value;
+            var tieneCostas = document.getElementById("tieneCostas").checked;
+
+
+            var estado = {
+                nombre: nombre,
+                capital: capital,
+                poblacion: poblacion,
+                tieneCostas: tieneCostas
+            };
+
+
+            fetch('/estados', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(estado)
+            })
+                    .then(function (response) {
+                        if (response.ok) {
+
+                            cargarEstados();
+                            document.getElementById("estadoForm").reset();
+                        } else {
+
+                            alert('Error al agregar el estado.');
+                        }
+                    })
+                    .catch(function (error) {
+
+                        alert('Error al realizar la solicitud.');
+                        console.error(error);
+                    });
+        });
+
+        //Cargar los estados existentes en la base de datos
+        function cargarEstados() {
+            fetch('/estados')
+                    .then(function (response) {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error('Error al obtener los estados.');
+                        }
+                    })
+                    .then(function (data) {
+
+                        document.getElementById("estadoTableBody").innerHTML = "";
+
+
+                        data.forEach(function (estado) {
+                            var row = document.createElement("tr");
+                            row.innerHTML = `
+                            <td>${estado.nombre}</td>
+                            <td>${estado.capital}</td>
+                            <td>${estado.poblacion}</td>
+                            <td>${estado.tieneCostas ? 'Sí' : 'No'}</td>
+                            <td>
+                                <button onclick="eliminarEstado(${estado.id})">Eliminar</button>
+                            </td>
+                        `;
+                            document.getElementById("estadoTableBody").appendChild(row);
+                        });
+                    })
+                    .catch(function (error) {
+
+                        alert('Error al obtener los estados.');
+                        console.error(error);
+                    });
+        }
+
+        //Eliminar un estado
+        function eliminarEstado(id) {
+            if (confirm("¿Estás seguro de eliminar este estado?")) {
+                fetch('/estados/' + id, {
+                    method: 'DELETE'
+                })
+                        .then(function (response) {
+                            if (response.ok) {
+
+                                cargarEstados();
+                            } else {
+
+                                alert('Error al eliminar el estado.');
+                            }
+                        })
+                        .catch(function (error) {
+
+                            alert('Error al realizar la solicitud.');
+                            console.error(error);
+                        });
+            }
+        }
+
+        // Cargar los estados al cargar la página
+        cargarEstados();
+    </script>
+
+</body>
+<footer th:replace="~{estado/fragmentos :: footer}"/>
+</html>
